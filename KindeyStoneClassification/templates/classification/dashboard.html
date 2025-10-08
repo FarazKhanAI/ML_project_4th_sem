@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - KidneyStoneAI{% endblock %}
+
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-content">
+                <h2>KidneyStoneAI</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+            <a href="{% url 'classification:home' %}" class="nav-item active">
+                <i class="fas fa-plus-circle"></i>
+                <span>New Classification</span>
+            </a>
+            <a href="{% url 'user:logout' %}" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+
+        <!-- Recent Analysis Section -->
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">
+                <i class="fas fa-history"></i>
+                <span>Recent Analysis</span>
+            </h3>
+            <div class="history-items" id="historyItems">
+                {% for item in history %}
+                <div class="history-item" data-history-id="{{ item.id }}">
+                    <div class="history-main">
+                        <div class="history-class">{{ item.predicted_class }}</div>
+                        <div class="history-meta">
+                            <span class="history-model">{{ item.model_used }}</span>
+                            <span class="history-confidence">{{ item.prediction_confidence|floatformat:1 }}%</span>
+                        </div>
+                    </div>
+                    <div class="history-time">{{ item.timestamp|timesince }} ago</div>
+                </div>
+                {% empty %}
+                <div class="history-empty">
+                    <i class="fas fa-inbox"></i>
+                    <p>No analysis history</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Header with Model Selection -->
+        <div class="top-header">
+            <div class="header-left">
+                <button class="sidebar-toggle-mobile" id="sidebarToggleMobile">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Kidney Stone Classification</h1>
+            </div>
+            
+            <!-- Model Selection Dropdown -->
+            <div class="model-dropdown-container">
+                <button class="model-dropdown-btn" id="modelDropdownBtn">
+                    <i class="fas fa-brain"></i>
+                    <span id="currentModel">CNN (Convolutional Neural Network)</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="model-dropdown-content" id="modelDropdown">
+                    {% for model in available_models %}
+                    <div class="model-option {% if model.id == 'cnn_model' %}selected{% endif %}" 
+                         data-model-id="{{ model.id }}"
+                         data-model-name="{{ model.name }}"
+                         data-model-description="{{ model.description }}">
+                        <div class="model-radio">
+                            <input type="radio" name="model_choice" value="{{ model.id }}" 
+                                   id="model_{{ model.id }}" 
+                                   {% if model.id == 'cnn_model' %}checked{% endif %}>
+                        </div>
+                        <div class="model-info">
+                            <label for="model_{{ model.id }}" class="model-name">{{ model.name }}</label>
+                            <div class="model-desc">{{ model.description }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Central Content Area -->
+        <div class="central-content" id="centralContent">
+            <!-- Upload Area -->
+            <div class="upload-container">
+                <div class="upload-card" id="uploadCard">
+                    <!-- Default Upload State -->
+                    <div class="upload-default" id="uploadDefault">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h2>Upload Kidney Stone Image</h2>
+                        <p>Drag & drop or click to browse supported formats</p>
+                        <p class="file-support">JPG, PNG, JPEG (Max 10MB)</p>
+                        
+                        <form method="post" action="{% url 'classification:predict' %}" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="model_choice" id="modelChoice" value="cnn_model">
+                            <input type="file" name="image" accept="image/*" class="file-input" id="fileInput" required>
+                            <label for="fileInput" class="btn btn-primary upload-btn">
+                                <i class="fas fa-folder-open"></i>
+                                Choose Image File
+                            </label>
+                        </form>
+                    </div>
+
+                    <!-- Image Preview State -->
+                    <div class="upload-preview" id="uploadPreview" style="display: none;">
+                        <h2>Image Ready for Analysis</h2>
+                        <div class="preview-container">
+                            <img id="previewImage" src="#" alt="Preview" class="preview-img">
+                        </div>
+                        <div class="image-info" id="imageInfo"></div>
+                        
+                        <div class="action-buttons">
+                            <button type="button" class="btn btn-outline" id="changeImageBtn">
+                                <i class="fas fa-exchange-alt"></i>
+                                Change Image
+                            </button>
+                            <button type="button" class="btn btn-primary" id="analyzeBtn">
+                                <i class="fas fa-microscope"></i>
+                                Analyze Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <h3>Analyzing Kidney Stone Image</h3>
+                    <p>Processing with <span id="selectedModelName">CNN Model</span>...</p>
+                    <p class="loading-note">This may take a few moments</p>
+                    
+                    <button type="button" class="btn btn-outline cancel-btn" id="cancelAnalysisBtn">
+                        <i class="fas fa-times"></i>
+                        Cancel Analysis
+                    </button>
+                </div>
+            </div>
+
+            <!-- Prediction Results - HIDDEN INITIALLY -->
+            <div class="prediction-results-container" id="predictionResultsContainer" style="display: none;">
+                <div class="prediction-results" id="predictionResults">
+                    <div class="results-header">
+                        <h3><i class="fas fa-file-medical-alt"></i> Analysis Report</h3>
+                        <button type="button" class="btn btn-outline cancel-btn" id="closeResultsBtn">
+                            <i class="fas fa-times"></i>
+                            Close Report
+                        </button>
+                    </div>
+                    <div class="results-content" id="resultsContent">
+                        <!-- Results will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include CSS -->
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+
+<!-- Include JavaScript -->
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

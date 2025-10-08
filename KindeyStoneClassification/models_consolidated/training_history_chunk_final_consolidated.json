@@ -1,0 +1,57 @@
+[
+  {
+    "chunk_id": 0,
+    "samples": 1000,
+    "accuracy": {
+      "CNN": 0.9850000143051147,
+      "random_forest": 0.98,
+      "xgboost": 0.995,
+      "decision_tree": 0.94,
+      "knn": 0.915
+    }
+  },
+  {
+    "chunk_id": 1,
+    "samples": 1000,
+    "accuracy": {
+      "CNN": 0.9900000095367432,
+      "random_forest": 0.305,
+      "xgboost": 0.99,
+      "decision_tree": 0.97,
+      "knn": 0.965
+    }
+  },
+  {
+    "chunk_id": 2,
+    "samples": 1000,
+    "accuracy": {
+      "CNN": 0.9850000143051147,
+      "random_forest": 0.505,
+      "xgboost": 0.97,
+      "decision_tree": 0.98,
+      "knn": 0.98
+    }
+  },
+  {
+    "chunk_id": 3,
+    "samples": 1000,
+    "accuracy": {
+      "CNN": 0.8949999809265137,
+      "random_forest": 0.925,
+      "xgboost": 0.94,
+      "decision_tree": 0.93,
+      "knn": 0.945
+    }
+  },
+  {
+    "chunk_id": 4,
+    "samples": 1000,
+    "accuracy": {
+      "CNN": 0.9700000286102295,
+      "random_forest": 0.815,
+      "xgboost": 0.96,
+      "decision_tree": 0.995,
+      "knn": 0.99
+    }
+  }
+]
